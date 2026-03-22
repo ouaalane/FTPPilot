@@ -1,14 +1,11 @@
  import { Client } from "basic-ftp"
  import fsPromises from 'node:fs/promises';
 
-
-
 class  MyFTPClient
 {
-     constructor(host, port, user, password, secure, verbose)
-    {
-        
-        
+
+     
+      constructor(host, port, user, password, secure, verbose) {
         this.Options = {
             host: host,
             port: port,
@@ -17,36 +14,12 @@ class  MyFTPClient
             secure: secure,
             verbose: verbose
         };
-        this.client =  new Client(400000);
-        this.client.ftp.verbose = this.Options.verbose; 
-
+        this.client = new Client(400000);
+        this.client.ftp.verbose = this.Options.verbose;
+        
     }
 
-
-    // async DownloadFile(filepath, destination) {
-    
-    //     try
-    //     {
-    //         await this.client.downloadToDir(
-    //             destination,
-    //             filepath
-    //         );
-    //     }
-    //     catch(err)
-    //     {
-    //         console.log("\x1b[31m", "Error downloading file: " + filepath); 
-    //         console.log(err);
-    //         return false;
-    //     }
-        
-    //     return true;
-    // }
-
-
-    async  DownloadDirectory(directoryPath,destination)
-    {
-
-
+    async connect() {
         await this.client.access({
             host: this.Options.host,
             port: this.Options.port,
@@ -54,6 +27,35 @@ class  MyFTPClient
             password: this.Options.password,
             secure: this.Options.secure
         });
+    }
+    
+      init(callback) {
+            callback.bind(this)();
+        }
+    async DownloadFile(filepath, destination) {
+    
+        try
+        {
+             await this.client.downloadTo(
+                destination,
+                filepath
+            );
+            return true;
+        }
+        catch(err)
+        {
+            console.log("\x1b[31m", "Error downloading file: " + filepath); 
+           console.error(err);
+            return false;
+        }
+        
+
+    }
+
+
+    async  DownloadDirectory(directoryPath,destination)
+    {
+
 
 
         const listFiles = await this.client.list(directoryPath);
@@ -101,7 +103,8 @@ class  MyFTPClient
   }
 }
 
-   static async geLocaltDirectorySize(directory) {
+    static async geLocaltDirectorySize(directory) 
+    {
     try {
         const files = await fsPromises.readdir(directory);
         let totalSize = 0;
@@ -110,14 +113,17 @@ class  MyFTPClient
             const filePath = `${directory}/${file}`;
             totalSize += await this.geLocaltFileSize(filePath);
         }
+        return totalSize;
         
-        console.log(`Directory size: ${totalSize} bytes`);
-    } catch (err) {
+        
+    } catch (err) 
+    {
         console.error('Error getting directory size:', err);
+        return 0;
     }
 }
 
-    async UploadDirectory(localDirectory, remoteDirectory)
+     async UploadDirectory(localDirectory, remoteDirectory)
     {
         await this.client.access({
             host: this.Options.host,
@@ -129,8 +135,10 @@ class  MyFTPClient
 
         let progressPercentage = 0;
         let Uploaded = 0;
-        const totalSize = await this.geLocaltDirectorySize(localDirectory);
+        const totalSize = await MyFTPClient.geLocaltDirectorySize(localDirectory);
 
+
+       
         this.client.trackProgress(info => {
             Uploaded += info.bytesOverall - Uploaded; 
             const percentage = ((Uploaded / totalSize) * 100).toFixed(2);
@@ -150,12 +158,121 @@ class  MyFTPClient
 
     }
 
+    async UploadFile(localFile, destination)
+    {
+        
+        await this.client.ensureDir(destination.substring(0, destination.lastIndexOf('/')));
+        try
+        {
+            await this.client.uploadFrom(localFile, destination);
+                    
+        }
+        catch(err)
+        {
+            console.error('Error uploading file:', err);
+            return false;
+        }
+
+        return true;
+    }
+    
+
+    async disconnect()
+    {
+        await this.client.close();
+    }
 
 
+
+    async deleteFile(remoteFile)
+    {
+        try
+        {
+            await this.client.remove(remoteFile);
+        } 
+        catch(err)
+        {
+            console.error('Error deleting file:', err);
+            
+        }
+    }
+   
+    async deleteDirectory(remoteDirectory)
+    {
+        try
+        {
+            await this.client.removeDir(remoteDirectory)
+          
+            
+        }
+        catch(err)
+        {
+            console.error('Error deleting directory:', err);
+            
+        }
+    }
+
+
+
+    async IsDirectoryExist(remoteDirectory)
+    {
+        try
+        {
+            await this.client.cd(remoteDirectory);
+            return true;
+        }
+        catch(err)
+        {
+            console.error('Error checking directory existence:', err);
+            return false;
+        }
+    }
+    async deleteAllFilesInDirectory(remoteDirectory)
+    {
+        if (!(await this.IsDirectoryExist(remoteDirectory)))
+        {
+            console.error('Directory does not exist:', remoteDirectory);
+            return false;
+        }
+
+        try
+        {
+            
+            const listFiles = await this.client.list(remoteDirectory);
+            const files = listFiles.filter(f=>f.type ===1);
+            for(const file of files)
+            {
+                await this.deleteFile(remoteDirectory + "/" + file.name);
+            }
+           
+        }
+        catch(err)
+        {
+            console.error('Error deleting files in directory:', err);
+            return false;
+
+        }
+        
+
+        return true;
+    }
 }
 
 
-const c = new MyFTPClient("192.168.100.71", 5972, "pc", "517320", false, false);
+const c = new MyFTPClient("192.168.100.52", 4806, "pc", "554216", false, false);
+
+await c.connect();
+
+
+// await c.DownloadFile("/device/DCIM/Camera/20191106_155609.jpg", "C:\\deep\\pro.jpg");
+
+
+// await c.UploadFile("C:\\deep\\pro.jpg", "/device/deep/pro2.jpg");
+
+
+// await c.deleteAllFilesInDirectory("/device/deep/") ? console.log("\x1b[32m", "All files in directory deleted successfully") : console.log("\x1b[31m", "Failed to delete all files in directory");
+
+// await c.deleteFile("/device/deep/pro2.jpg");
 
 
 // await c.DownloadDirectory("/device/DCIM/Camera", "./my-phone-files");
@@ -167,4 +284,5 @@ const c = new MyFTPClient("192.168.100.71", 5972, "pc", "517320", false, false);
 // MyFTPClient.geLocaltDirectorySize("C:\\deep\\");
 
 
-await c.UploadDirectory("C:\\deep\\", "/device/DCIM/Camera");
+// await c.UploadDirectory("C:\\deep\\", "/device/deep/");
+
