@@ -14,7 +14,7 @@ class FTPCLI {
   }
 
   #getConfigFromJson() {
-    return fs.readFile("../config/config.json", "utf-8").then((data) => {
+    return fs.readFile("./config/config.json", "utf-8").then((data) => {
       try {
         return JSON.parse(data);
       } catch (err) {
