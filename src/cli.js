@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { FTPilotClient } from "./FTPilotClient.js";
 import { input, select, confirm, checkbox } from "@inquirer/prompts";
 import fs from "node:fs/promises";
