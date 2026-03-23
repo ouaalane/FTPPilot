@@ -1,6 +1,6 @@
-# TFP
+# FTPP
 
-TFP is a lightweight FTP pilot project providing a client and server implementation, CLI tools, and test coverage. It helps demonstrate FTP interactions and provides a starting point for experimentation.
+FTPP is a lightweight FTP project providing a client and server implementation, CLI tools, and test coverage. It helps demonstrate FTP interactions and provides a starting point for experimentation.
 
 **Contents**
 
