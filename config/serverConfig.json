@@ -1,0 +1,17 @@
+{
+  "port": 21,
+  "host": "0.0.0.0",
+  "rootDirectory": "./shared",
+  "passive": {
+    "minPort": 1024,
+    "maxPort": 1050
+  },
+  "maxConnections": 10,
+  "users": [
+    {
+      "username": "admin",
+      "password": "changeme",
+      "root": "./shared"
+    }
+  ]
+}
