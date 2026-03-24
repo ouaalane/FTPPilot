@@ -2,19 +2,26 @@
 import { FTPilotClient } from "./FTPilotClient.js";
 import { input, select, confirm, checkbox } from "@inquirer/prompts";
 import fs from "node:fs/promises";
-import { connect } from "node:http2";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { exit } from "node:process";
 
 class FTPCLI {
   #IsConnected = false;
 
+  #configPath = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "..",
+    "config",
+    "config.json",
+  );
   constructor() {
     this.client = null;
     this.connected = false;
   }
 
   #getConfigFromJson() {
-    return fs.readFile("./config/config.json", "utf-8").then((data) => {
+    return fs.readFile(this.#configPath, "utf-8").then((data) => {
       try {
         return JSON.parse(data);
       } catch (err) {
