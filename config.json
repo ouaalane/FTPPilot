@@ -1,8 +1,8 @@
 {
-  "host": "192.168.100.220",
-  "port": 2122,
-  "user": "pc",
-  "password": "123456",
+  "host": "",
+  "port": "",
+  "user": "",
+  "password": "",
   "secure": false,
-  "verbose": true
+  "verbose": false
 }

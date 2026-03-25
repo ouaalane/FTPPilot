@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { FTPilotClient } from "./FTPilotClient.js";
-import { input, select, confirm, checkbox } from "@inquirer/prompts";
+import { input, select, confirm, checkbox, password } from "@inquirer/prompts";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,22 +20,30 @@ class FTPCLI {
     this.connected = false;
   }
 
-  #getConfigFromJson() {
-    return fs.readFile(this.#configPath, "utf-8").then((data) => {
-      try {
-        return JSON.parse(data);
-      } catch (err) {
-        console.error("Error parsing config.json:", err.message);
-        return {
-          host: "",
-          port: "",
-          user: "",
-          password: "",
-          secure: false,
-          verbose: false,
-        };
-      }
-    });
+  async #getConfigFromJson() {
+    const data = await fs.readFile(this.#configPath, "utf-8");
+    const config = {
+      host: "",
+      port: 0,
+      user: "",
+      password: "",
+      secure: false,
+      verbose: false,
+    };
+
+    try {
+      const Rconfig = await JSON.parse(data);
+
+      config.host = Rconfig.host;
+      config.port = Number(Rconfig.port);
+      config.user = Rconfig.user;
+      config.password = Rconfig.password;
+      config.secure = Rconfig.secure;
+      config.verbose = Rconfig.verbose;
+    } catch (err) {
+      console.log("Error during parse Config file : " + err);
+    }
+    return config;
   }
 
   #isValidConfig(config) {
@@ -48,12 +56,12 @@ class FTPCLI {
   }
 
   #saveConfigToJson(config) {
-    return fs.writeFile("config.json", JSON.stringify(config, null, 2));
+    return fs.writeFile(this.#configPath, JSON.stringify(config, null, 2));
   }
 
   #clearsavedConfig() {
     return fs.writeFile(
-      "config.json",
+      this.#configPath,
       JSON.stringify(
         {
           host: "",
@@ -108,10 +116,10 @@ class FTPCLI {
     this.#IsConnected = await this.client.connect();
     if (!this.#IsConnected) {
       console.log("Failed to connect with entered configuration.");
-      await this.clearsavedConfig();
+      await this.#clearsavedConfig();
     } else {
       console.log("Connected successfully!");
-      saveConfigToJson({
+      await this.#saveConfigToJson({
         host: host,
         port: port,
         user: user,
@@ -178,7 +186,7 @@ class FTPCLI {
 
   async #downloadDirectoryScreen() {
     console.clear();
-    if (!this.connected) {
+    if (!this.#IsConnected) {
       console.log("Not connected.");
       return;
     }
@@ -201,7 +209,7 @@ class FTPCLI {
 
   async #uploadFileScreen() {
     console.clear();
-    if (!this.connected) {
+    if (!this.#IsConnected) {
       console.log("Not connected.");
       return;
     }
@@ -225,7 +233,7 @@ class FTPCLI {
 
   async #uploadDirectoryScreen() {
     console.clear();
-    if (!this.connected) {
+    if (!this.#IsConnected) {
       console.log("Not connected.");
       return;
     }
@@ -241,7 +249,7 @@ class FTPCLI {
 
   async #deleteFileScreen() {
     console.clear();
-    if (!this.connected) {
+    if (!this.#IsConnected) {
       console.log("Not connected.");
       return;
     }
@@ -256,7 +264,7 @@ class FTPCLI {
 
   async #deleteDirectoryScreen() {
     console.clear();
-    if (!this.connected) {
+    if (!this.#IsConnected) {
       console.log("Not connected.");
       return;
     }
